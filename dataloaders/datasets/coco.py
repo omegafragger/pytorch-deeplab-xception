@@ -22,7 +22,7 @@ class COCOSegmentation(Dataset):
                  base_dir=Path.db_root_dir('coco'),
                  split='train',
                  year='2017'):
-        super().__init__()
+        super(COCOSegmentation, self).__init__()
         ann_file = os.path.join(base_dir, 'annotations/instances_{}{}.json'.format(split, year))
         ids_file = os.path.join(base_dir, 'annotations/{}_ids_{}.pth'.format(split, year))
         self.img_dir = os.path.join(base_dir, 'images/{}{}'.format(split, year))
