@@ -4,7 +4,6 @@ import torch.utils.model_zoo as model_zoo
 from modeling.sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 
 
-# There is a dropout layer with a dropout rate of 0.8 after every bottleneck block in the resnet.
 class Bottleneck(nn.Module):
     expansion = 4
 
@@ -41,7 +40,6 @@ class Bottleneck(nn.Module):
 
         out += residual
         out = self.relu(out)
-        out = self.dropout(out)
 
         return out
 
