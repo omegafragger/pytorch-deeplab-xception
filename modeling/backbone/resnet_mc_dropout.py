@@ -18,8 +18,6 @@ class Bottleneck(nn.Module):
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = BatchNorm(planes * 4)
         self.relu = nn.ReLU(inplace=True)
-        # The 0.8 here can be further fine-tuned.
-        self.dropout = nn.Dropout(0.8)
         self.downsample = downsample
         self.stride = stride
         self.dilation = dilation
@@ -74,6 +72,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], dilation=dilations[2], BatchNorm=BatchNorm)
         self.layer4 = self._make_MG_unit(block, 512, blocks=blocks, stride=strides[3], dilation=dilations[3], BatchNorm=BatchNorm)
         # self.layer4 = self._make_layer(block, 512, layers[3], stride=strides[3], dilation=dilations[3], BatchNorm=BatchNorm)
+        self.dropout = nn.Dropout(0.8)
         self._init_weight()
 
         if pretrained:
@@ -123,9 +122,13 @@ class ResNet(nn.Module):
 
         x = self.layer1(x)
         low_level_feat = x
+        x = self.dropout(x)
         x = self.layer2(x)
+        x = self.dropout(x)
         x = self.layer3(x)
+        x = self.dropout(x)
         x = self.layer4(x)
+        x = self.dropout(x)
         return x, low_level_feat
 
     def _init_weight(self):
