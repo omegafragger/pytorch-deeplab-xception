@@ -112,11 +112,48 @@ class Visualizer(object):
         return prod
 
 
+    def save_stochastic_images(self, images, targets, outputs, pred_entropies, mutual_infos, counter=0):
+        num_images = images.shape[0]
+        count = counter
+        for i in range(num_images):
+            image = torch.unsqueeze(images[i], dim=0)
+            target = torch.unsqueeze(targets[i], dim=0)
+            output = torch.unsqueeze(outputs[i], dim=0)
+            pred_entropy = pred_entropies[i]
+            mutual_info =  mutual_infos[i]
+
+            #print (pred_entropy)
+            print (mutual_info)
+
+            pred = torch.argmax(output, axis=1)
+            mask = ((target >= 0) & (target < self.nclass)).int()
+
+            pred_im = (pred * mask).float()
+            target_im = (target * mask).float()
+
+            pred_im_numpy = pred_im[0].int().cpu().numpy()
+            target_im_numpy = target_im[0].int().cpu().numpy()
+            pred_im_color = label_to_color_image(pred_im_numpy)
+            target_im_color = label_to_color_image(target_im_numpy)
+
+            pred_imm = Image.fromarray((pred_im_color * 255).astype(np.uint8))
+            target_imm = Image.fromarray((target_im_color * 255).astype(np.uint8))
+            pred_imm.save('./predictions/pred_imm' + str(count) + '.jpg')
+            target_imm.save('./targets/target_imm' + str(count) + '.jpg')
+
+            save_image(image, './images/image' + str(count) + '.jpg')
+            save_image(pred_entropy, './pred_entropies/pred_entropy' + str(count) + '.jpg')
+            save_image(mutual_info, './mutual_infos/mutual_info' + str(count) + '.jpg')
+            count += 1
+        return count
+
+
     def validation_mc_dropout(self, epoch):
         self.model.eval()
         self.evaluator.reset()
         tbar = tqdm(self.val_loader, desc='\r')
 
+        counter = 0
         for i, sample in enumerate(tbar):
             image, target = sample['image'], sample['label']
             if self.args.cuda:
@@ -124,7 +161,12 @@ class Visualizer(object):
             with torch.no_grad():
                 model_outputs = self.get_stochastic_outputs(image)
                 # Output is the mean of the stochastic model outputs
-                output = torch.mean(model_outputs, 0)
+                output = torch.mean(model_outputs, 1)
+
+            predictive_entropy = self.get_predictive_entropy(model_outputs)
+            mutual_information = self.get_mutual_information(model_outputs)
+
+            counter = self.save_stochastic_images(image, target, output, predictive_entropy, mutual_information, counter)
 
             pred = output.data.cpu().numpy()
             target = target.cpu().numpy()
@@ -154,10 +196,34 @@ class Visualizer(object):
             for i in range(num_sfp):
                 stochastic_output = self.model(image)
                 if (i == 0):
-                    model_outputs = torch.unsqueeze(stochastic_output, 0)
+                    model_outputs = torch.unsqueeze(stochastic_output, 1)
                 else:
-                    model_outputs = torch.cat((model_outputs, torch.unsqueeze(stochastic_output, 0)), 0)
+                    model_outputs = torch.cat((model_outputs, torch.unsqueeze(stochastic_output, 1)), 1)
         return model_outputs
+
+
+    def get_predictive_entropy(self, stochastic_outputs):
+        stochastic_outputs = torch.nn.functional.softmax(stochastic_outputs, dim=2)
+        mean_output = torch.mean(stochastic_outputs, dim=1)
+        jitter = torch.ones(mean_output.shape).to(mean_output.device)
+        jitter.fill_(1e-10)
+        log_mean_output = torch.log(mean_output + jitter)
+        prod_output = mean_output * log_mean_output
+        pred_entropy = - torch.sum(prod_output, dim=1)
+        return pred_entropy
+
+
+    def get_mutual_information(self, stochastic_outputs):
+        pred_entropy = self.get_predictive_entropy(stochastic_outputs)
+        stochastic_outputs = torch.nn.functional.softmax(stochastic_outputs, dim=2)
+        jitter = torch.ones(stochastic_outputs.shape).to(stochastic_outputs.device)
+        jitter.fill_(1e-10)
+        log_stochastic_outputs = torch.log(stochastic_outputs + jitter)
+        prod_stochastic_outputs = stochastic_outputs * log_stochastic_outputs
+        prod_stochastic_outputs = torch.sum(torch.mean(prod_stochastic_outputs, dim=1), dim=1)
+        mutual_information = pred_entropy + prod_stochastic_outputs
+        return mutual_information
+
 
 
 def main():
