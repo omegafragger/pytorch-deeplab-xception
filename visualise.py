@@ -122,9 +122,6 @@ class Visualizer(object):
             pred_entropy = pred_entropies[i]
             mutual_info =  mutual_infos[i]
 
-            #print (pred_entropy)
-            print (mutual_info)
-
             pred = torch.argmax(output, axis=1)
             mask = ((target >= 0) & (target < self.nclass)).int()
 
