@@ -113,3 +113,4 @@ pred_entropies
 mutual_infos
 targets
 predictions
+probability_confidences

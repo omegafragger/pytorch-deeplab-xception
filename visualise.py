@@ -62,7 +62,8 @@ class Visualizer(object):
 
     def validation(self, epoch):
         self.model.eval()
-        tbar = tqdm(self.train_loader, desc='\r')
+        self.evaluator.reset()
+        tbar = tqdm(self.val_loader, desc='\r')
         test_loss = 0.0
         for i, sample in enumerate(tbar):
             image, target = sample['image'], sample['label']
@@ -73,7 +74,8 @@ class Visualizer(object):
             #pred = output.data.cpu().numpy()
             #target = target.cpu().numpy()
             pred = torch.argmax(output, axis=1)
-
+            pred_probabilities, _ = torch.max(torch.nn.functional.softmax(output, dim=1), dim=1)
+            pred_probabilities = torch.squeeze(pred_probabilities, 0)
             entropy = self.softmax_entropy(output)
             
             # Code to visualize the prediction and target
@@ -98,12 +100,14 @@ class Visualizer(object):
 
             save_image(image, './images/image' + str(i) + '.jpg')
             save_image(entropy, './entropies/entropy' + str(i) + '.jpg')
+            save_image(pred_probabilities, './probability_confidences' + str(i) + '.jpg')
             #save_image(pred_im, 'pred_im' + str(i) + '.jpg')
             #save_image(target_im, 'target_im' + str(i) + '.jpg')
 
 
+
     def softmax_entropy(self, model_output):
-        output = torch.squeeze(torch.nn.functional.softmax(model_output), 0)
+        output = torch.squeeze(torch.nn.functional.softmax(model_output, dim=1), 0)
         jitter = torch.ones(output.shape).to(output.device)
         jitter.fill_(1e-10)
         log_output = torch.log(output + jitter)
@@ -246,10 +250,10 @@ def main():
 
     parser.add_argument('--use-sbd', action='store_true', default=True,
                         help='whether to use SBD dataset (default: True)')
-    parser.add_argument('--batch-size', type=int, default=2,
+    parser.add_argument('--batch-size', type=int, default=1,
                         metavar='N', help='input batch size for \
                                 training (default: auto)')
-    parser.add_argument('--test-batch-size', type=int, default=2,
+    parser.add_argument('--test-batch-size', type=int, default=1,
                         metavar='N', help='input batch size for \
                                 testing (default: auto)')
 
@@ -288,7 +292,7 @@ def main():
 
 
     visualizer = Visualizer(args)
-    visualizer.validation_mc_dropout(1)
+    visualizer.validation(1)
 
 if __name__ == "__main__":
    main()
