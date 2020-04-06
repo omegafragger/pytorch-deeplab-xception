@@ -3,6 +3,12 @@ from torch.utils.data import DataLoader
 
 def make_data_loader(args, **kwargs):
 
+    if args.dataset == 'pascal_ood':
+        val_set = pascal_ood.VOCSegmentation(args)
+        num_class = 21
+        val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, **kwargs)
+        return None, val_loader, None, num_class
+
     if args.dataset == 'pascal':
         train_set = pascal.VOCSegmentation(args, split='train')
         val_set = pascal.VOCSegmentation(args, split='val')
