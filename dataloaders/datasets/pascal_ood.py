@@ -26,12 +26,6 @@ class VOCSegmentation(Dataset):
         self._base_dir = base_dir
         self._image_dir = os.path.join(self._base_dir, 'JPEGImagesOOD')
 
-        if isinstance(split, str):
-            self.split = [split]
-        else:
-            split.sort()
-            self.split = split
-
         self.args = args
 
         _splits_dir = os.path.join(self._base_dir, 'ImageSets', 'Segmentation')
@@ -49,7 +43,7 @@ class VOCSegmentation(Dataset):
                 self.images.append(_image)
 
         # Display stats
-        print('Number of images in {}: {:d}'.format(split, len(self.images)))
+        print('Number of images in {}: {:d}'.format('ood', len(self.images)))
 
     def __len__(self):
         return len(self.images)
@@ -86,5 +80,5 @@ class VOCSegmentation(Dataset):
         return composed_transforms(sample)
 
     def __str__(self):
-        return 'VOC2012(split=' + str(self.split) + ')'
+        return 'VOC2012(split=' + str('ood') + ')'
 

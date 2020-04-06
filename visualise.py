@@ -235,7 +235,7 @@ def main():
     parser.add_argument('--out-stride', type=int, default=16,
                         help='network output stride (default: 16)')
     parser.add_argument('--dataset', type=str, default='pascal',
-                        choices=['pascal', 'coco', 'cityscapes'],
+                        choices=['pascal', 'pascal_ood', 'coco', 'cityscapes'],
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=4,
                         metavar='N', help='dataloader threads')
